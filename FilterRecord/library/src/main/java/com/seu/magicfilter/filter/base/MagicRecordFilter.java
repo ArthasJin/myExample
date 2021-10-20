@@ -63,7 +63,7 @@ public class MagicRecordFilter extends GPUImageFilter {
         //OpenGLES默认应该是4字节对齐应，但是不知道为什么在索尼Z2上效率反而降低
         //并且跟ImageReader最终计算出来的rowStride也和我这样计算出来的不一样，这里怀疑跟硬件和分辨率有关
         //这里默认取得128的倍数，这样效率反而高，为什么？
-        final int align = 128;//128字节对齐
+        final int align = 4;//128字节对齐
         mRowStride = (width * mPixelStride + (align - 1)) & ~(align - 1);
 
         mPboSize = mRowStride * height;
@@ -157,15 +157,15 @@ public class MagicRecordFilter extends GPUImageFilter {
 
     private void bindPixelBuffer() {
         GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, mPboIds.get(mPboIndex));
-        MagicJni.glReadPixels(0, 0, mRowStride / mPixelStride, mInputHeight, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE);
+        GLES30.glReadPixels(0, 0, mRowStride / mPixelStride, mInputHeight, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, 0);
 
-        if (mInitRecord) {//第一帧没有数据跳出
-            unbindPixelBuffer();
-            mInitRecord = false;
-            return;
-        }
+//        if (mInitRecord) {//第一帧没有数据跳出
+//            unbindPixelBuffer();
+//            mInitRecord = false;
+//            return;
+//        }
 
-        GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, mPboIds.get(mPboNewIndex));
+//        GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, mPboIds.get(mPboNewIndex));
 
         //glMapBufferRange会等待DMA传输完成，所以需要交替使用pbo
         ByteBuffer byteBuffer = (ByteBuffer) GLES30.glMapBufferRange(GLES30.GL_PIXEL_PACK_BUFFER, 0, mPboSize, GLES30.GL_MAP_READ_BIT);
@@ -180,8 +180,8 @@ public class MagicRecordFilter extends GPUImageFilter {
     private void unbindPixelBuffer() {
         GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, 0);
 
-        mPboIndex = (mPboIndex + 1) % 2;
-        mPboNewIndex = (mPboNewIndex + 1) % 2;
+//        mPboIndex = (mPboIndex + 1) % 2;
+//        mPboNewIndex = (mPboNewIndex + 1) % 2;
     }
 
     public void setRecordListener(OnRecordListener l) {
